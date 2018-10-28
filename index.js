@@ -4,6 +4,7 @@
 
 const http = require('http')
 const url = require('url')
+const StringDecoder = require('string_decoder').StringDecoder
 
 const port = 3000
 
@@ -25,16 +26,50 @@ const server = http.createServer(function(req, res) {
 
 	var method = req.method.toLowerCase()
 
+	
+	var headers = req.headers;
+	console.log("Headers are: ", headers);
+
+
 	if(components[0] == "service") {
-		console.log("Service requested");
-	}
-	else {
-		console.log("File requested");
-	}
+                console.log("Service requested");
+        }
+        else {
+                console.log("File requested");
+        }
 
-	res.end('shit\n')
 
-	console.log('Request received on path: ' + trimmedPath + ' (' + method + ')')
+	var decoder = new StringDecoder('utf-8')
+	var buffer = ''
+	req.on('data',function(data) {
+		buffer += decoder.write(data)
+	})
+	req.on('end',function() {
+		buffer += decoder.end()
+
+		var chosenHandler = typeof(router[trimmedPath]) !== 'undefined' ? router[trimmedPath] : handlers.notFound;
+
+		var data = {
+			'trimmedPath' : trimmedPath,
+			'queryStringObject' : queryStringObject,
+			'method' : method,
+			'headers' : headers,
+			'payload' : buffer
+		}
+
+		chosenHandler(data, function(statusCode, payload) {
+			statusCode = typeof(statusCode) == 'number' ? statusCode : 200
+			payload = typeof(payload) == 'object' ? payload : {}
+			var payloadString = JSON.stringify(payload)
+			res.writeHead(statusCode)
+			res.end(payloadString)
+		})
+
+
+
+	})	
+
+
 
 })
 
@@ -44,3 +79,15 @@ server.listen(port, function() {
 
 })
 
+var handlers = {}
+handlers.sample = function(data, callback) {
+	callback(406, {'name':'sample handler'})	
+}
+
+handlers.notFound = function(data, callback) {
+	callback(404, {'returnCode':'Not found'})
+}
+
+var router = {
+	'sample' : handlers.sample
+}
