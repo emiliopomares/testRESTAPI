@@ -3,33 +3,42 @@
  */
 
 const http = require('http')
+const https = require('https')
 const url = require('url')
 const StringDecoder = require('string_decoder').StringDecoder
 const config = require('./config')
+const fs = require('fs')
 
+const certFile = fs.readFileSync('./ssl/cert.pem')
+const keyFile = fs.readFileSync('./ssl/key.pem')
 
-const server = http.createServer(function(req, res) {
+const credentials = 
+{
+	cert: certFile,
+	key: keyFile
+}
+
+function serverFunction(req, res) {
 
 	var parsedURL = url.parse(req.url, true)
 
-	var path = parsedURL.pathname
-	var trimmedPath = path.replace(/^\/+|\/+$/g, '')
-
-	
-	var queryStringObject = parsedURL.query;
-
-	console.log("query: " + JSON.stringify(queryStringObject))
+        var path = parsedURL.pathname
+        var trimmedPath = path.replace(/^\/+|\/+$/g, '')
 
 
-	var components = trimmedPath.split('/')
+        var queryStringObject = parsedURL.query;
+
+        console.log("query: " + JSON.stringify(queryStringObject))
 
 
-	var method = req.method.toLowerCase()
+        var components = trimmedPath.split('/')
 
-	
-	var headers = req.headers;
-	console.log("Headers are: ", headers);
 
+        var method = req.method.toLowerCase()
+
+
+        var headers = req.headers;
+        console.log("Headers are: ", headers);
 
 	if(components[0] == "service") {
                 console.log("Service requested");
@@ -39,48 +48,63 @@ const server = http.createServer(function(req, res) {
         }
 
 
-	var decoder = new StringDecoder('utf-8')
-	var buffer = ''
-	req.on('data',function(data) {
-		buffer += decoder.write(data)
-	})
-	req.on('end',function() {
-		buffer += decoder.end()
+        var decoder = new StringDecoder('utf-8')
+        var buffer = ''
+        req.on('data',function(data) {
+                buffer += decoder.write(data)
+        })
+        req.on('end',function() {
+                buffer += decoder.end()
 
-		var chosenHandler = typeof(router[trimmedPath]) !== 'undefined' ? router[trimmedPath] : handlers.notFound;
+                var chosenHandler = typeof(router[trimmedPath]) !== 'undefined' ? router[trimmedPath] : handlers.notFound;
 
-		var data = {
-			'trimmedPath' : trimmedPath,
-			'queryStringObject' : queryStringObject,
-			'method' : method,
-			'headers' : headers,
-			'payload' : buffer
-		}
+                var data = {
+                        'trimmedPath' : trimmedPath,
+                        'queryStringObject' : queryStringObject,
+                        'method' : method,
+                        'headers' : headers,
+                        'payload' : buffer
+                }
 
 		chosenHandler(data, function(statusCode, payload) {
-			statusCode = typeof(statusCode) == 'number' ? statusCode : 200
-			payload = typeof(payload) == 'object' ? payload : {}
-			var payloadString = JSON.stringify(payload)
-			res.setHeader('Content-Type', 'application/json')
-			res.writeHead(statusCode)
-			res.end(payloadString)
-		})
+                        statusCode = typeof(statusCode) == 'number' ? statusCode : 200
+                        payload = typeof(payload) == 'object' ? payload : {}
+                        var payloadString = JSON.stringify(payload)
+                        res.setHeader('Content-Type', 'application/json')
+                        res.writeHead(statusCode)
+                        res.end(payloadString)
+                })
 
 
 
-	})	
+        })
 
 
+
+}
+
+
+const httpServer = http.createServer(serverFunction)
+const httpsServer = https.createServer(credentials, serverFunction)
+
+httpServer.listen(config.httpPort, function() {
+
+	console.log('http server started on port ' + config.httpPort + ' in ' + config.envName + ' mode')
 
 })
 
-server.listen(config.port, function() {
+httpsServer.listen(config.httpsPort, function() {
 
-	console.log('server started on port ' + config.port + ' in ' + config.envName + ' mode')
+	console.log('https server started on port ' + config.httpsPort + ' in ' + config.envName + ' mode')
 
 })
 
 var handlers = {}
+
+handlers.ping = function(data, callback) {
+	callback(200)
+}
+
 handlers.sample = function(data, callback) {
 	callback(406, {'name':'sample handler'})	
 }
@@ -90,5 +114,6 @@ handlers.notFound = function(data, callback) {
 }
 
 var router = {
-	'sample' : handlers.sample
+	'sample' : handlers.sample,
+	'ping': handlers.ping
 }
