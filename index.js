@@ -5,8 +5,8 @@
 const http = require('http')
 const url = require('url')
 const StringDecoder = require('string_decoder').StringDecoder
+const config = require('./config')
 
-const port = 3000
 
 const server = http.createServer(function(req, res) {
 
@@ -61,6 +61,7 @@ const server = http.createServer(function(req, res) {
 			statusCode = typeof(statusCode) == 'number' ? statusCode : 200
 			payload = typeof(payload) == 'object' ? payload : {}
 			var payloadString = JSON.stringify(payload)
+			res.setHeader('Content-Type', 'application/json')
 			res.writeHead(statusCode)
 			res.end(payloadString)
 		})
@@ -73,9 +74,9 @@ const server = http.createServer(function(req, res) {
 
 })
 
-server.listen(port, function() {
+server.listen(config.port, function() {
 
-	console.log('server started on port ' + port)
+	console.log('server started on port ' + config.port + ' in ' + config.envName + ' mode')
 
 })
 
