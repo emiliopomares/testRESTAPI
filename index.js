@@ -8,6 +8,23 @@ const url = require('url')
 const StringDecoder = require('string_decoder').StringDecoder
 const config = require('./config')
 const fs = require('fs')
+const _data = require('./lib/data')
+
+//_data.create('test', 'newFile', {shit:"shoot"}, function(err) {
+//	console.log(err)
+//})
+//_data.read('test', 'nasdfasdfewFile', function(err, data) {
+
+//	if(!err) console.log(data)
+//	else console.log("Error: " + err)
+
+//})
+//_data.update('test','newFile',{shit:"poo"}, function(err) {
+//	console.log("The error was: " + err)
+//})
+_data.delete('test', 'newFile', function(err) {
+	console.log("The error was: " + err)
+})
 
 const certFile = fs.readFileSync('./ssl/cert.pem')
 const keyFile = fs.readFileSync('./ssl/key.pem')
