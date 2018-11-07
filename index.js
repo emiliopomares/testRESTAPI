@@ -9,22 +9,8 @@ const StringDecoder = require('string_decoder').StringDecoder
 const config = require('./config')
 const fs = require('fs')
 const _data = require('./lib/data')
-
-//_data.create('test', 'newFile', {shit:"shoot"}, function(err) {
-//	console.log(err)
-//})
-//_data.read('test', 'nasdfasdfewFile', function(err, data) {
-
-//	if(!err) console.log(data)
-//	else console.log("Error: " + err)
-
-//})
-//_data.update('test','newFile',{shit:"poo"}, function(err) {
-//	console.log("The error was: " + err)
-//})
-_data.delete('test', 'newFile', function(err) {
-	console.log("The error was: " + err)
-})
+const handlers = require('./lib/handlers')
+const helpers = require('./lib/helpers')
 
 const certFile = fs.readFileSync('./ssl/cert.pem')
 const keyFile = fs.readFileSync('./ssl/key.pem')
@@ -80,7 +66,7 @@ function serverFunction(req, res) {
                         'queryStringObject' : queryStringObject,
                         'method' : method,
                         'headers' : headers,
-                        'payload' : buffer
+                        'payload' : helpers.parseJsonToObject(buffer)
                 }
 
 		chosenHandler(data, function(statusCode, payload) {
@@ -116,21 +102,9 @@ httpsServer.listen(config.httpsPort, function() {
 
 })
 
-var handlers = {}
-
-handlers.ping = function(data, callback) {
-	callback(200)
-}
-
-handlers.sample = function(data, callback) {
-	callback(406, {'name':'sample handler'})	
-}
-
-handlers.notFound = function(data, callback) {
-	callback(404, {'returnCode':'Not found'})
-}
 
 var router = {
 	'sample' : handlers.sample,
-	'ping': handlers.ping
+	'ping': handlers.ping,
+	'users': handlers.users
 }
