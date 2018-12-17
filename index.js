@@ -60,7 +60,7 @@ function serverFunction(req, res) {
                 buffer += decoder.end()
 
                 var chosenHandler = typeof(router[trimmedPath]) !== 'undefined' ? router[trimmedPath] : handlers.notFound;
-
+		console.log("typeof:" + typeof(router[trimmedPath]))
                 var data = {
                         'trimmedPath' : trimmedPath,
                         'queryStringObject' : queryStringObject,
@@ -106,5 +106,7 @@ httpsServer.listen(config.httpsPort, function() {
 var router = {
 	'sample' : handlers.sample,
 	'ping': handlers.ping,
-	'users': handlers.users
+	'users': handlers.users,
+	'checks': handlers.checks,
+	'tokens' : handlers.tokens
 }
